@@ -5,8 +5,12 @@
 #define echoPin 25
 #define trigPin 23
 #define FULLSTEP 4
-#define motorPin1 5
-#define motorPin2 6
+#define motor1Pin1 48
+#define motor1Pin2 49
+#define motor1Power 5
+#define motor2Pin1 47
+#define motor2Pin2 46
+#define motor2Power 6
 
 float motion[] = {0, 0};
 int action;
@@ -23,8 +27,12 @@ void setup() {
   pinMode(ledPin, OUTPUT);
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
-  pinMode(motorPin1, OUTPUT);
-  pinMode(motorPin2, OUTPUT);
+  pinMode(motor1Power, OUTPUT);
+  pinMode(motor2Power, OUTPUT);
+  pinMode (motor1Pin1, OUTPUT);
+  pinMode (motor1Pin2, OUTPUT);
+  pinMode (motor2Pin1, OUTPUT);
+  pinMode (motor2Pin2, OUTPUT);
   randomSeed(analogRead(0));
   myStepper.setMaxSpeed(5000.0);
   myStepper.setCurrentPosition(0);
@@ -52,7 +60,8 @@ void loop() {
       lookRight();
       break;
     case 5:
-      speedControl(data);
+      motionControl(data);
+      break;
     default:
       break;
   }
@@ -61,25 +70,37 @@ void loop() {
     useForce();
   }
 
-  int pace = int(motion[0] * 255);
-  if (pace > 0) {
-    analogWrite(motorPin1, pace);
-  } else if (pace < 0) {
-    analogWrite(motorPin2, pace);
-  } else {
-    analogWrite(motorPin1, 0);
-    analogWrite(motorPin2, 0);
-  }
-  
-//  Serial.print("[");
-//  Serial.print(motion[0]);
-//  Serial.print(", ");
-//  Serial.print(motion[1]);
-//  Serial.print("]");
-//  Serial.print("\n");
+  driveMotors();
 }
 
-void speedControl(String cmd) {
+void driveMotors() {
+  int xPace = int(motion[0] * 255);
+  int yPace = int(motion[1] * 255);
+  if (xPace > 0) {
+    analogWrite(motor1Power, xPace);
+    analogWrite(motor2Power, xPace);
+    digitalWrite(motor1Pin1, HIGH);
+    digitalWrite(motor1Pin2, LOW);
+    digitalWrite(motor2Pin1, HIGH);
+    digitalWrite(motor2Pin2, LOW);
+  } else if (xPace < 0) {
+    analogWrite(motor1Power, -1 * xPace);
+    analogWrite(motor2Power, -1 * xPace);
+    digitalWrite(motor1Pin1, LOW);
+    digitalWrite(motor1Pin2, HIGH);
+    digitalWrite(motor2Pin1, LOW);
+    digitalWrite(motor2Pin2, HIGH);
+  } else {
+    analogWrite(motor1Power, 0);
+    analogWrite(motor2Power, 0);
+    digitalWrite(motor1Pin1, LOW);
+    digitalWrite(motor1Pin2, LOW);
+    digitalWrite(motor2Pin1, LOW);
+    digitalWrite(motor2Pin2, LOW);
+  }
+}
+
+void motionControl(String cmd) {
   if (!forceMode) {
     int left = cmd.indexOf('[');
     int split = cmd.indexOf(',');
@@ -120,9 +141,9 @@ void useForce() {
   distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back) - in cm
 
   if (distance >= 0 && distance <= 10) {
-    motion[0] = 1.0;
+    motion[0] = 0.5;
   } else if (distance > 10 && distance < 50) {
-    motion[0] = -1.0;
+    motion[0] = -0.5;
   } else {
     motion[0] = 0.0;
     Serial.println("No force detected.");
