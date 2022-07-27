@@ -1,16 +1,16 @@
 #include <AccelStepper.h>
 
-#define speakerPin 13
-#define ledPin 12
+#define speakerPin 12
+#define ledPin 13
 #define echoPin 25
 #define trigPin 23
 #define FULLSTEP 4
-#define motor1Pin1 48
-#define motor1Pin2 49
-#define motor1Power 5
-#define motor2Pin1 47
-#define motor2Pin2 46
-#define motor2Power 6
+#define motorRPin1 48
+#define motorRPin2 49
+#define motorRPower 6
+#define motorLPin1 47
+#define motorLPin2 46
+#define motorLPower 5
 
 float motion[] = {0, 0};
 int action;
@@ -27,15 +27,16 @@ void setup() {
   pinMode(ledPin, OUTPUT);
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
-  pinMode(motor1Power, OUTPUT);
-  pinMode(motor2Power, OUTPUT);
-  pinMode (motor1Pin1, OUTPUT);
-  pinMode (motor1Pin2, OUTPUT);
-  pinMode (motor2Pin1, OUTPUT);
-  pinMode (motor2Pin2, OUTPUT);
+  pinMode(motorRPower, OUTPUT);
+  pinMode(motorLPower, OUTPUT);
+  pinMode (motorRPin1, OUTPUT);
+  pinMode (motorRPin2, OUTPUT);
+  pinMode (motorLPin1, OUTPUT);
+  pinMode (motorLPin2, OUTPUT);
   randomSeed(analogRead(0));
   myStepper.setMaxSpeed(5000.0);
   myStepper.setCurrentPosition(0);
+  Serial.println("Starting R2-D2 Program");
 }
 
 void loop() {
@@ -70,34 +71,87 @@ void loop() {
     useForce();
   }
 
-  driveMotors();
+  moveR2();
 }
 
-void driveMotors() {
-  int xPace = int(motion[0] * 255);
-  int yPace = int(motion[1] * 255);
-  if (xPace > 0) {
-    analogWrite(motor1Power, xPace);
-    analogWrite(motor2Power, xPace);
-    digitalWrite(motor1Pin1, HIGH);
-    digitalWrite(motor1Pin2, LOW);
-    digitalWrite(motor2Pin1, HIGH);
-    digitalWrite(motor2Pin2, LOW);
-  } else if (xPace < 0) {
-    analogWrite(motor1Power, -1 * xPace);
-    analogWrite(motor2Power, -1 * xPace);
-    digitalWrite(motor1Pin1, LOW);
-    digitalWrite(motor1Pin2, HIGH);
-    digitalWrite(motor2Pin1, LOW);
-    digitalWrite(motor2Pin2, HIGH);
-  } else {
-    analogWrite(motor1Power, 0);
-    analogWrite(motor2Power, 0);
-    digitalWrite(motor1Pin1, LOW);
-    digitalWrite(motor1Pin2, LOW);
-    digitalWrite(motor2Pin1, LOW);
-    digitalWrite(motor2Pin2, LOW);
+// Speed control functions
+// forward = y pos
+// back = y neg
+// left = x pos
+// right = x neg
+void moveR2() {
+  int xPace = int(motion[0] * 255 * 0.4) / 2;
+  int yPace = int(motion[1] * 255 * 0.6) / 2;
+  if (xPace > 0) { // turning left
+    if (yPace > 0) { // forward left
+      analogWrite(motorRPower, yPace + xPace);
+      analogWrite(motorLPower, yPace);
+      rForward();
+      lForward();
+    } else if (yPace < 0) { // back left
+      analogWrite(motorRPower, (-1 * yPace) + xPace);
+      analogWrite(motorLPower, -1 * yPace);
+      rBack();
+      lBack();
+    } else { // stationary left
+      analogWrite(motorRPower, xPace);
+      analogWrite(motorLPower, xPace);
+      rForward();
+      lBack();
+    }
+  } else if (xPace < 0) { // turning right
+    if (yPace > 0) { // forward right
+      analogWrite(motorRPower, yPace);
+      analogWrite(motorLPower, yPace + (-1 * xPace));
+      rForward();
+      lForward();
+    } else if (yPace < 0) { // back right
+      analogWrite(motorRPower, -1 * yPace);
+      analogWrite(motorLPower, -1 * (yPace + xPace));
+      rBack();
+      lBack();
+    } else { // stationary right
+      analogWrite(motorLPower, -1 * xPace);
+      analogWrite(motorRPower, -1 * xPace);
+      rBack();
+      lForward();
+    }
+  } else { // straight
+    if (yPace > 0) { // forward
+      analogWrite(motorRPower, yPace);
+      analogWrite(motorLPower, yPace);
+      rForward();
+      lForward();
+    } else if (yPace < 0) { // back
+      analogWrite(motorRPower, -1 * yPace);
+      analogWrite(motorLPower, -1 * yPace);
+      rBack();
+      lBack();
+    } else { // stationary
+      analogWrite(motorRPower, 0);
+      analogWrite(motorLPower, 0);
+    }
   }
+}
+
+void rForward() {
+  digitalWrite(motorRPin1, LOW);
+  digitalWrite(motorRPin2, HIGH);
+}
+
+void rBack() {
+  digitalWrite(motorRPin1, HIGH);
+  digitalWrite(motorRPin2, LOW);
+}
+
+void lForward() {
+  digitalWrite(motorLPin1, LOW);
+  digitalWrite(motorLPin2, HIGH);
+}
+
+void lBack() {
+  digitalWrite(motorLPin1, HIGH);
+  digitalWrite(motorLPin2, LOW);
 }
 
 void motionControl(String cmd) {
@@ -120,6 +174,8 @@ void motionControl(String cmd) {
     }
 }
 
+
+// Ultrasonic sensor functions
 void toggleForce() {
   if (forceMode) {
     forceMode = false;
@@ -141,15 +197,17 @@ void useForce() {
   distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back) - in cm
 
   if (distance >= 0 && distance <= 10) {
-    motion[0] = 0.5;
+    motion[1] = 0.5;
   } else if (distance > 10 && distance < 50) {
-    motion[0] = -0.5;
+    motion[1] = -0.5;
   } else {
-    motion[0] = 0.0;
+    motion[1] = 0.0;
     Serial.println("No force detected.");
   }
 }
 
+
+// Speak functions
 void phrase1() {
     
     int k = random(1000,2000);
@@ -208,6 +266,7 @@ void speak() {
     noTone(speakerPin);         
 }
 
+// Look functions
 void lookRight() {
   myStepper.setCurrentPosition(0);
   myStepper.moveTo(500);

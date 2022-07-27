@@ -32,8 +32,8 @@ if __name__ == '__main__':
         if arduino.isOpen:
             print("{} connected".format(arduino.port))
             try:
+                connectController(arduino)
                 while True:
-                    connectController(arduino)
                     for event in pygame.event.get():
                         cmd = None
                         if event.type == JOYBUTTONDOWN:
@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
                         if event.type == JOYAXISMOTION:
                             if event.axis < 2: # Left stick
-                                if abs(event.value) > 0.1:
+                                if abs(event.value) > 0.3:
                                     # cmd = "{}\n".format(-1 * event.value)
                                     motion[event.axis] = -1 * event.value
                                 else:
