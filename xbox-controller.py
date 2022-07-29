@@ -27,7 +27,7 @@ def sendCommand(cmd, arduino):
         arduino.write(cmd.encode())
 
 if __name__ == '__main__':
-    with serial.Serial("/dev/cu.usbmodem142201", 9600, timeout=1) as arduino:
+    with serial.Serial("/dev/ttyACM0", 9600, timeout=1) as arduino:
         sleep(0.5)
         if arduino.isOpen:
             print("{} connected".format(arduino.port))
@@ -37,24 +37,27 @@ if __name__ == '__main__':
                     for event in pygame.event.get():
                         cmd = None
                         if event.type == JOYBUTTONDOWN:
-                            if event.button == 1:
+                            print(event.button)
+                            if event.button == 0:
                                 cmd = "1: BEEP BEEP BEEP BOOP\n"
-                            if event.button == 2:
+                            if event.button == 4:
                                 cmd = "2: Use Force\n"
-                            if event.button == 13:
+                            if event.button == 3:
                                 cmd = "3: Look left\n"
-                            if event.button == 14:
+                            if event.button == 1:
                                 cmd = "4: Look right\n"
 
                         if event.type == JOYAXISMOTION:
                             if event.axis < 2: # Left stick
                                 if abs(event.value) > 0.3:
-                                    # cmd = "{}\n".format(-1 * event.value)
                                     motion[event.axis] = -1 * event.value
+                                    cmd = "5: {}\n".format(motion)
                                 else:
-                                    # cmd = "{}\n".format(-1 *event.value)
-                                    motion[event.axis] = 0
-                                cmd = "5: {}\n".format(motion)
+                                    if motion[event.axis] == 0:
+                                        cmd = None
+                                    else:
+                                        motion[event.axis] = 0
+                                        cmd = "5: {}\n".format(motion)
                         sendCommand(cmd, arduino)
             except KeyboardInterrupt:
                 print("Program closing...")

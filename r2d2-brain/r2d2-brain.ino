@@ -1,7 +1,7 @@
 #include <AccelStepper.h>
 
-#define speakerPin 12
-#define ledPin 13
+#define speakerPin 7
+#define ledPin 4
 #define echoPin 25
 #define trigPin 23
 #define FULLSTEP 4
@@ -80,8 +80,8 @@ void loop() {
 // left = x pos
 // right = x neg
 void moveR2() {
-  int xPace = int(motion[0] * 255 * 0.4) / 2;
-  int yPace = int(motion[1] * 255 * 0.6) / 2;
+  int xPace = (int(motion[0] * 255 * 0.3)) - 1;
+  int yPace = (int(motion[1] * 255 * 0.7)) - 1;
   if (xPace > 0) { // turning left
     if (yPace > 0) { // forward left
       analogWrite(motorRPower, yPace + xPace);
@@ -111,7 +111,7 @@ void moveR2() {
       rBack();
       lBack();
     } else { // stationary right
-      analogWrite(motorLPower, -1 * xPace);
+      analogWrite(motorLPower, -1 * xPace );
       analogWrite(motorRPower, -1 * xPace);
       rBack();
       lForward();
@@ -134,12 +134,12 @@ void moveR2() {
   }
 }
 
-void rForward() {
+void rBack() {
   digitalWrite(motorRPin1, LOW);
   digitalWrite(motorRPin2, HIGH);
 }
 
-void rBack() {
+void rForward() {
   digitalWrite(motorRPin1, HIGH);
   digitalWrite(motorRPin2, LOW);
 }
@@ -197,9 +197,9 @@ void useForce() {
   distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back) - in cm
 
   if (distance >= 0 && distance <= 10) {
-    motion[1] = 0.5;
+    motion[1] = 1.0;
   } else if (distance > 10 && distance < 50) {
-    motion[1] = -0.5;
+    motion[1] = -1.0;
   } else {
     motion[1] = 0.0;
     Serial.println("No force detected.");
